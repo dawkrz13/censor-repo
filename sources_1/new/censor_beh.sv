@@ -30,51 +30,50 @@ module censor_beh();
     string tmp_string;
     
     // HASH
-    bit [31:0] hash_array = 0;
-    int hash_array_size = 32;
+    bit [63:0] hash_array = 0;
+    int hash_array_size = 64;
     int hash;
     
     // ITERATORS
     int i, j;
     
+    function automatic int calculate_hash(const ref string tmp_string);
+
+        int tmp_hash = 0;
+        for(j = 0; j < tmp_string.len(); j = j + 1)
+        begin
+            // str.getc(j) returns the ASCII code of the j-th character in str
+            tmp_hash = tmp_hash + tmp_string.getc(j);
+            tmp_hash = tmp_hash % hash_array_size;
+        end
+        return tmp_hash;
+ 
+    endfunction
+    
     initial begin
         // CREATING LOOKUP TABLE START
+        $display("Creating hash lookup table.");
         for(i = 0; i < array_size1; i = i + 1)
         begin
             tmp_string = forbidden_words[i];
-            // CALCULATE HASH START
-            hash = 0;
-            for(j = 0; j < tmp_string.len(); j = j + 1)
-            begin
-                // str.getc(j) returns the ASCII code of the j-th character in str
-                hash = hash + tmp_string.getc(j);
-                hash = hash % hash_array_size;
-            end
-            // CALCULATE HASH END
+            hash = calculate_hash(tmp_string);
             hash_array[hash] = 1;
-            $display("%s inserted", tmp_string);
+            $display("%10s inserted, hash: %d", tmp_string, hash);
         end
         // CREATING LOOKUP TABLE END
         // CHECKING TEST WORDS START
+        $display("Checking input stream.");
         for(i = 0; i < array_size2; i = i + 1)
         begin
             tmp_string = test_words_array[i];
-            // CALCULATE HASH START
-            hash = 0;
-            for(j = 0; j < tmp_string.len(); j = j + 1)
-            begin
-                // str.getc(j) returns the ASCII code of the j-th character in str
-                hash = hash + tmp_string.getc(j);
-                hash = hash % hash_array_size;
-            end
-            // CALCULATE HASH END
+            hash = calculate_hash(tmp_string);
             if (hash_array[hash])
             begin
-                $display("%s is probably forbidden", tmp_string);
+                $display("[!]%7s is probably forbidden, hash: %d", tmp_string, hash);
             end
             else
             begin
-                $display("%s is not forbidden", tmp_string);
+                $display("%10s is not forbidden,      hash: %d", tmp_string, hash);
             end
         end
         // CHECKING TEST WORDS END
